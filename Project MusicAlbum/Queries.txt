@@ -1,0 +1,65 @@
+/* Query 1 - Which Artist has the most Tracks */
+SELECT AR.Name AS AtristName, COUNT (*) AS TrackCount
+FROM Artist AR
+JOIN Album AL 
+ON AL.ArtistId = AR.ArtistId
+JOIN Track TR ON TR.AlbumId = AL.AlbumId
+GROUP BY AR.Name
+ORDER BY TrackCount DESC;
+
+/* Query 2 - Which are the top 10 grossing albums in 2013 */
+
+SELECT AL.Title, SUM(IL.Quantity * IL.UnitPrice) AS TotalGrossing
+FROM Album AL
+JOIN Track TR 
+ON TR.AlbumId = AL.AlbumId
+JOIN InvoiceLine IL 
+ON IL.TrackId = TR.TrackId
+JOIN Invoice IV 
+ON IL.InvoiceId = IV.InvoiceId
+WHERE IV.InvoiceDate BETWEEN '2013-01-01' AND '2014-01-01'
+GROUP BY AL.Title
+ORDER BY TotalGrossing DESC
+LIMIT 10;
+
+
+/* Query 3 - Which Genre is most Popular in how many countries */
+
+SELECT SUB4.GenreName, COUNT(*) AS NumberOfCountries
+FROM
+(
+SELECT SUB3.CountryName, SUB3.GenreName, SUB3.TotalCount
+FROM
+(SELECT CountryName, MAX(PopularGenre) AS TotalCount
+FROM 
+(SELECT CT.Country AS CountryName, GN.Name AS GenreName, COUNT(*) AS PopularGenre
+FROM Customer CT
+JOIN Invoice IV ON IV.CustomerId = CT.CustomerId
+JOIN InvoiceLine IL ON IL.InvoiceId = IV.InvoiceId
+JOIN Track TR ON TR.TrackId = IL.TrackId
+JOIN Genre GN ON GN.GenreId = TR.GenreId
+GROUP BY CT.Country, GN.Name
+) AS SUB
+GROUP BY CountryName ) AS SUB2
+JOIN 
+(SELECT CT.Country AS CountryName, GN.Name AS GenreName, COUNT(*) AS TotalCount
+FROM Customer CT
+JOIN Invoice IV ON IV.CustomerId = CT.CustomerId
+JOIN InvoiceLine IL ON IL.InvoiceId = IV.InvoiceId
+JOIN Track TR ON TR.TrackId = IL.TrackId
+JOIN Genre GN ON GN.GenreId = TR.GenreId
+GROUP BY CT.Country, GN.Name
+ORDER BY TotalCount DESC
+) SUB3
+ON SUB2.CountryName = SUB3.CountryName AND SUB2.TotalCount = SUB3.TotalCount
+ORDER BY SUB3.TotalCount DESC) SUB4
+GROUP BY SUB4.GenreName;
+
+/* Query 4 - Which Country has more orders in December Month */
+
+SELECT C.Country, count(*) AS NumberOfOrders
+FROM Customer C 
+JOIN Invoice I ON I.CustomerId = C.CustomerId
+WHERE STRFTIME('%m', I.InvoiceDate) = '12'
+GROUP BY C.Country
+ORDER BY NumberOfOrders DESC;
